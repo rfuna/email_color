@@ -105,14 +105,24 @@ prompt = f"""Please categorize this email according to the color category rules 
 
 messages = [{"role": "user", "content": prompt}]
 
-response = client.chat.completions.create(
+response1 = client.chat.completions.create(
     model="gpt-4-1106-preview",
     messages=messages,
     tools = tools,
     tool_choice="auto")
 
 
-print(response)
+# print(response1)
+
+# # # Assuming 'response1' is the object you have, we access the color and print it. 
+
+# for choice in response1.choices:
+#     if hasattr(choice, 'message') and choice.message.tool_calls:
+#         for tool_call in choice.message.tool_calls:
+#             if hasattr(tool_call, 'function') and tool_call.function.arguments:
+#                 arguments = json.loads(tool_call.function.arguments)
+#                 color = arguments.get("color", "No color found")
+#                 print("The Color is:", color)
 
 
 
@@ -169,18 +179,18 @@ def analyse_email(email: Email):
         tool_choice="auto"
     )
 
-    # Assuming 'response' is the object you have
-    tool_call_response = response.choices[0].message.tool_calls[0]
-    arguments_json = tool_call_response.function.arguments
+    # Parsing and extracting the required information from the response
+    try:
+        tool_call_response = response.choices[0].message.tool_calls[0]
+        arguments = json.loads(tool_call_response.function.arguments)
 
-    # Parse the JSON string into a Python dictionary
-    arguments = json.loads(arguments_json)
+        color = arguments.get("color", "No color provided")
+        reasoning = arguments.get("reasoning", "No reasoning provided")
+        nextAction = arguments.get("nextAction", "No next action provided")
+        draftResponse = arguments.get("draftResponse", "No draft response provided")
 
-    # Extract the values
-    color = arguments.get("color")  # Extracts "Red"
-    reasoning = arguments.get("reasoning")  # Extracts the reasoning text
-    nextAction = arguments.get("nextAction")  # Extracts the next action text
-    draftResponse = arguments.get("draftResponse")  # Extracts the draft response text
+    except (IndexError, AttributeError, json.JSONDecodeError) as e:
+        return {"error": f"An error occurred while processing the response: {e}"}
 
     # Returning the extracted values
     return {
